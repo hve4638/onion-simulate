@@ -19,7 +19,7 @@ type Routines []Routine
 
 type Routine struct {
 	Name             string
-	RepeatCount      types.IntRange
+	RepeatCount      int64
 	RepeatInterval   types.IntRange
 	Period           Period
 	Endpoint         OnionNode

@@ -24,7 +24,7 @@ type UserConfig struct {
 
 type RoutineConfig struct {
 	Id                    string       `yaml:"id"`
-	RepeatCountRange      IntRange     `yaml:"repeat_count_range"`
+	RepeatCountRange      int64        `yaml:"repeat_count"`
 	RepeatIntervalRange   IntRange     `yaml:"repeat_interval_range"`
 	Period                PeriodConfig `yaml:"period"`
 	URL                   string       `yaml:"url"`

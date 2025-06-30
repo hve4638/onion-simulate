@@ -23,7 +23,6 @@ func (op *UserOP) Simulate() {
 			fmt.Println("Circuit channel not found")
 			continue
 		}
-		// packet.circId
 	}
 }
 
@@ -34,16 +33,15 @@ func (op *UserOP) simulateRoutine(rt *Routine) {
 			time.Sleep(timeUntilNextPeriod(rt.Period, now))
 			continue
 		}
+		// fmt.Println("Routine", rt.Name, "is not running")
 
-		repeat := 0
-		for repeat < rt.RepeatCount.Max {
+		repeat := int64(0)
+		for repeat < rt.RepeatCount {
+			// fmt.Println("Routine", rt.Name, "is running")
 			now := op.network.timer.Now()
 			if !inPeriod(rt.Period, now) {
 				break
 			}
-
-			// delay := randInRange(rt.Period.time)
-			time.Sleep(time.Duration(1000) * time.Millisecond)
 
 			op.runRoutine(rt)
 
@@ -60,7 +58,7 @@ func inPeriod(period Period, now int64) bool {
 }
 
 func timeUntilNextPeriod(p Period, now int64) time.Duration {
-	return 10 * time.Second
+	return 1 * time.Second
 }
 
 func randInRange(r types.IntRange) int {

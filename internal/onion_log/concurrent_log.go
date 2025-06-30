@@ -24,17 +24,17 @@ func NewConcurrentLog(size int, timer *Timer) ConcurrentLog {
 	}
 }
 
-func (cl *ConcurrentLog) Add(from, to uint32, comments ...interface{}) {
+func (cl *ConcurrentLog) Add(from, to uint32, comments ...any) {
 	start := int(atomic.AddInt32(&cl.logIndex, 1))
 
 	for i := range cl.maxSize {
 		index := (start + i) % cl.maxSize
 		log := &cl.logs[index]
-		if log.TryAdd(from, to) {
+		if log.TryAdd(from, to, comments...) {
 			return
 		}
 	}
-	cl.logs[start%cl.maxSize].Add(from, to)
+	cl.logs[start%cl.maxSize].Add(from, to, comments...)
 }
 
 func (cl *ConcurrentLog) MergeAndClear() []LogEntry {

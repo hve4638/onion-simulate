@@ -17,7 +17,7 @@ type CreatePayload struct {
 
 func (pkt *Packet) Send() {
 	network := pkt.to.GetNetwork()
-	network.logs.Add(uint32(pkt.from.GetId()), uint32(pkt.to.GetId()), network.timer.Now())
+	network.logs.Add(uint32(pkt.from.GetId()), uint32(pkt.to.GetId()), pkt.cmd)
 
 	pkt.to.Receive(pkt)
 }

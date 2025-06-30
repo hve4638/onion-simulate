@@ -96,7 +96,7 @@ func (o *OnionNetwork) addRoutine(config types.RoutineConfig) {
 	maxMs = maxMs*60 + config.Period.TimeRange.Max.Second
 	maxMs = maxMs * 1000
 	fmt.Printf("min: %d, max: %d\n", minMs, maxMs)
-	fmt.Printf("config : %v", config)
+	fmt.Printf("config : %v\n", config)
 
 	routine := Routine{
 		Name:           config.Id,

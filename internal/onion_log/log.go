@@ -14,7 +14,7 @@ type Log struct {
 type LogEntry struct {
 	From     uint32
 	To       uint32
-	Comments []interface{}
+	Comments []any
 	Time     int64
 }
 
@@ -26,7 +26,7 @@ func NewLog(timer *Timer) Log {
 	}
 }
 
-func (log *Log) TryAdd(from, to uint32, comments ...interface{}) bool {
+func (log *Log) TryAdd(from, to uint32, comments ...any) bool {
 	if log.lock.TryLock() {
 		defer log.lock.Unlock()
 		fmt.Printf("[%d][%d] %d\n", from, to, log.timer.Now())
@@ -37,13 +37,13 @@ func (log *Log) TryAdd(from, to uint32, comments ...interface{}) bool {
 	}
 }
 
-func (log *Log) Add(from, to uint32, comments ...interface{}) {
-	fmt.Printf("[%d][%d] %d\n", from, to, log.timer.Now())
-
+func (log *Log) Add(from, to uint32, comments ...any) {
 	log.lock.Lock()
 	defer log.lock.Unlock()
 
-	log.entries = append(log.entries, LogEntry{from, to, comments, log.timer.Now()})
+	logEntry := LogEntry{from, to, comments, log.timer.Now()}
+	log.entries = append(log.entries, logEntry)
+	fmt.Println(logEntry)
 }
 
 func (log *Log) ExportAndClear() []LogEntry {
@@ -56,5 +56,6 @@ func (log *Log) ExportAndClear() []LogEntry {
 }
 
 func (logEntry *LogEntry) String() string {
-	return fmt.Sprintf("[%d][%d] %d", logEntry.From, logEntry.To, logEntry.Time)
+	comments := fmt.Sprint(logEntry.Comments...)
+	return fmt.Sprintf("[%d][%d] %d %s", logEntry.From, logEntry.To, logEntry.Time, comments)
 }
