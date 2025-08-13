@@ -1,7 +1,7 @@
 package onion_ready
 
 import (
-	types "hve/onion-simulate/internal/types"
+	types "hve/onion-simulate/internal/onion/types"
 	"os"
 
 	yaml "gopkg.in/yaml.v3"

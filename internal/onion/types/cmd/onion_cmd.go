@@ -1,6 +1,8 @@
-package onion
+package cmd
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type OnionCMD int
 

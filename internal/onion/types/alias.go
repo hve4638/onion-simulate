@@ -6,3 +6,5 @@ type Int64Range struct {
 	Min int64
 	Max int64
 }
+
+type TimeInterval uint32

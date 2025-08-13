@@ -2,144 +2,67 @@ package onion
 
 import (
 	"fmt"
+	"hve/onion-simulate/internal/onion/simulator"
+	"hve/onion-simulate/internal/onion/types"
 	onion_log "hve/onion-simulate/internal/onion_log"
-	"hve/onion-simulate/internal/types"
-	"math/rand"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
-type TimeInterval uint32
+func Simulate(config types.Config, option types.Options) {
+	onionNetwork := simulator.NewOnionSimulator(option.Seed)
+	fmt.Println("Simulation started with options:", option)
 
-type OnionNetwork struct {
-	globalRand *rand.Rand
-	logs       onion_log.ConcurrentLog
-	timer      *onion_log.Timer
-	idGen      IdGenerator
-	routines   map[string]Routines
-	dns        map[string]*ServerOP
+	// onionNetwork.Init(&config)
 
-	Routers []*OnionRouter
-	Users   []*UserOP
-	Servers []*ServerOP
+	// onionNetwork.ShowOption()
+	onionNetwork.Simulate()
+
+	// go writeLog("log.txt", &onionNetwork.logs)
+	fmt.Println("Simulation started")
+
+	go waitForExit()
+
+	// go func() {
+	// 	for {
+	// 		time.Sleep(1 * time.Second)
+	// 		fmt.Println(onionNetwork.timer.Now())
+	// 	}
+	// }()
+	// fmt.Scanln()
+	// onionNetwork.Users[0].makeCircuit(4)
+	// fmt.Scanln()
+
+	// go test(&onionNetwork)
+
+	select {}
 }
 
-func NewOnionNetwork(size uint32, seed int64) OnionNetwork {
-	timer := onion_log.NewTimer()
+func writeLog(filename string, logs *onion_log.ConcurrentLog) {
+	for {
+		time.Sleep(1 * time.Second)
+		entries := logs.MergeAndClear()
 
-	return OnionNetwork{
-		globalRand: rand.New(rand.NewSource(seed)),
-		logs:       onion_log.NewConcurrentLog(int(size/10), &timer),
-		timer:      &timer,
-		idGen:      MakeIdCounter(size, int64(seed)),
-		dns:        make(map[string]*ServerOP),
-		routines:   make(map[string]Routines),
-
-		Routers: make([]*OnionRouter, 0),
-		Users:   make([]*UserOP, 0),
-		Servers: make([]*ServerOP, 0),
-	}
-}
-
-func (o *OnionNetwork) Simulate() {
-	o.timer.Reset()
-
-	for _, node := range o.Routers {
-		go node.Simulate()
-	}
-	for _, node := range o.Servers {
-		go node.Simulate()
-	}
-	for _, node := range o.Users {
-		go node.Simulate()
-	}
-}
-
-func (o *OnionNetwork) Init(config *types.Config) {
-	o.addServers(config.Server)
-	o.addRoutines(config.Routines)
-	o.addUsers(config.User)
-	o.addRouters(config.User)
-}
-
-func (o *OnionNetwork) addServers(serverConfig []types.ServerConfig) {
-	proxies := make([]*ServerOP, 0)
-	dns := make(map[string]*ServerOP)
-	for _, data := range serverConfig {
-		id := o.idGen.Next()
-		op := MakeServerOP(types.NodeId(id), o)
-
-		proxies = append(proxies, op)
-		dns[data.Id] = op
-	}
-
-	o.dns = dns
-	o.Servers = proxies
-}
-
-func (o *OnionNetwork) addRoutines(routines []types.RoutineConfig) {
-	for _, config := range routines {
-		o.addRoutine(config)
-	}
-}
-
-func (o *OnionNetwork) addRoutine(config types.RoutineConfig) {
-	endpoint, ok := o.dns[config.URL]
-	if !ok {
-		panicf("Initialize routine error: server not found: %s", config.URL)
-	}
-	minMs := config.Period.TimeRange.Min.Hour
-	minMs = minMs*60 + config.Period.TimeRange.Min.Minute
-	minMs = minMs*60 + config.Period.TimeRange.Min.Second
-	minMs = minMs * 1000
-
-	maxMs := config.Period.TimeRange.Max.Hour
-	maxMs = maxMs*60 + config.Period.TimeRange.Max.Minute
-	maxMs = maxMs*60 + config.Period.TimeRange.Max.Second
-	maxMs = maxMs * 1000
-	fmt.Printf("min: %d, max: %d\n", minMs, maxMs)
-	fmt.Printf("config : %v\n", config)
-
-	routine := Routine{
-		Name:           config.Id,
-		RepeatCount:    config.RepeatCountRange,
-		RepeatInterval: config.RepeatIntervalRange,
-		Period: Period{
-			week: Week(config.Period.Week),
-			time: types.Int64Range{Min: minMs, Max: maxMs},
-		},
-		Endpoint:         endpoint,
-		CommunicateCount: config.CommunicateCountRange,
-	}
-
-	o.routines[config.Id] = append(o.routines[config.Id], routine)
-}
-
-func (o *OnionNetwork) addUsers(userConfig []types.UserConfig) {
-	for _, data := range userConfig {
-		id := types.NodeId(o.idGen.Next())
-		op := NewUserOP(id, o)
-		for _, routineName := range data.Routines {
-			routine, ok := o.routines[routineName]
-			if !ok {
-				warnf("[Warning] routine not found: '%s'\n", routineName)
-				println("[Warning] user: ", routine)
-			}
-			op.routines = append(op.routines, routine...)
+		file, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return
 		}
+		defer file.Close()
 
-		o.Users = append(o.Users, op)
+		for _, entry := range entries {
+			file.WriteString(fmt.Sprintf("%s\n", entry.String()))
+		}
 	}
 }
 
-func (o *OnionNetwork) addRouters(userConfig []types.UserConfig) {
-	for o.idGen.HasNext() {
-		id := types.NodeId(o.idGen.Next())
-		op := NewOR(id, o)
-		o.Routers = append(o.Routers, op)
-	}
-}
+func waitForExit() {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	<-sigChan
+	fmt.Println("\nReceived interrupt signal. Shutting down...")
+	fmt.Println("Simulation finished")
 
-func (o *OnionNetwork) ShowOption() {
-	fmt.Println("Routers count : ", len(o.Routers))
-	fmt.Println("Servers count : ", len(o.Servers))
-	fmt.Println("Users count   : ", len(o.Users))
+	os.Exit(0)
 }

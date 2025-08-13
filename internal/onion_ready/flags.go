@@ -2,7 +2,7 @@ package onion_ready
 
 import (
 	"flag"
-	"hve/onion-simulate/internal/types"
+	types "hve/onion-simulate/internal/onion/types"
 )
 
 func ParseOption() types.Options {

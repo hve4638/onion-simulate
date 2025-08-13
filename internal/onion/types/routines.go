@@ -1,6 +1,4 @@
-package onion
-
-import "hve/onion-simulate/internal/types"
+package types
 
 type Week uint
 
@@ -20,13 +18,13 @@ type Routines []Routine
 type Routine struct {
 	Name             string
 	RepeatCount      int64
-	RepeatInterval   types.IntRange
+	RepeatInterval   IntRange
 	Period           Period
 	Endpoint         OnionNode
-	CommunicateCount types.IntRange
+	CommunicateCount IntRange
 }
 
 type Period struct {
 	week Week
-	time types.Int64Range
+	time Int64Range
 }

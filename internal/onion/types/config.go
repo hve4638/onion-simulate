@@ -1,15 +1,15 @@
 package types
 
 type Config struct {
-	NodeCount NodeCountConfig `yaml:"node_count"`
-	Server    []ServerConfig  `yaml:"server"`
-	User      []UserConfig    `yaml:"user"`
-	Routines  []RoutineConfig `yaml:"routines"`
+	Node   NodeConfig     `yaml:"node"`
+	Server []ServerConfig `yaml:"server"`
+	User   []UserConfig   `yaml:"user"`
+	// Routines  []RoutineConfig `yaml:"routines"`
 }
 
-type NodeCountConfig struct {
-	Amount         int `yaml:"amount"`
-	AllowExitCount int `yaml:"allow_exit_count"`
+type NodeConfig struct {
+	Amount     int `yaml:"amount"`
+	AmountExit int `yaml:"amount_exit"`
 }
 
 type ServerConfig struct {
@@ -18,7 +18,8 @@ type ServerConfig struct {
 }
 
 type UserConfig struct {
-	Id       string   `yaml:"id"`
+	Name     string   `yaml:"id"`
+	Amount   int      `yaml:"amount"`
 	Routines []string `yaml:"routines"`
 }
 
